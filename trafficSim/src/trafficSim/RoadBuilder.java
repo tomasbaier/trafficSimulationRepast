@@ -33,6 +33,9 @@ public class RoadBuilder implements ContextBuilder<Object> {
 	private List<GridPoint> roads = new ArrayList<GridPoint>();
 	private List<Integer> usedX = new ArrayList<Integer>();
 	private List<Integer> usedY = new ArrayList<Integer>();
+	private List<GridPoint> ends = new ArrayList<GridPoint>();
+	private List<GridPoint> starts = new ArrayList<GridPoint>();
+	
 
 	@Override
 	public Context build(Context<Object> context) {
@@ -66,6 +69,29 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			generateRoads(start, end, grid, space, context);
 			exits.remove(start);
 			exits.remove(end);
+		}
+		filterEndPoints(starts, grid, space);
+		filterEndPoints(ends, grid, space);
+		/*
+		filterEndPointTest(starts);
+		filterEndPointTest(ends);
+		*/
+		
+		for(int i = 0; i < starts.size(); i++) {
+			GridPoint startCoords = starts.get(i);
+			Start start = new Start(grid, space);
+			context.add(start);
+			grid.moveTo(start, startCoords.getX(), startCoords.getY());
+			space.moveTo(start, startCoords.getX(), startCoords.getY());
+			context.add(start);
+		}
+		for(int i = 0; i < ends.size(); i++) {
+			GridPoint exitCoords = ends.get(i);
+			Exit exit = new Exit(grid, space);
+			context.add(exit);
+			grid.moveTo(exit, exitCoords.getX(), exitCoords.getY());
+			space.moveTo(exit, exitCoords.getX(), exitCoords.getY());
+			context.add(exit);
 		}
 		//generateExits(grid, space, context);
 		
@@ -144,6 +170,8 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		}
 		*/
 		exits = new ArrayList<GridPoint>();
+		starts = new ArrayList<GridPoint>();
+		ends = new ArrayList<GridPoint>();
 		return context;
 	}
 	
@@ -221,13 +249,36 @@ public class RoadBuilder implements ContextBuilder<Object> {
 	}
 	
 	private void generateRoads(GridPoint start, GridPoint end, Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
-		System.out.println("START - " + start + " END - " + end);
+		//System.out.println("START - " + start + " END - " + end);
 		int xDif = end.getX() - start.getX();
 		int yDif = end.getY() - start.getY();
 		
 		int xStep = xDif < 0 ? -1 : 1;
 		int yStep = yDif < 0 ? -1 : 1;
 		
+		if(xStep == -1) {
+			GridPoint startGen = new GridPoint(start.getX() + 1, start.getY() + 1);
+			GridPoint endGen = new GridPoint(start.getX() + 1, start.getY());
+			starts.add(startGen);
+			ends.add(endGen);
+		} else {
+			GridPoint startGen = new GridPoint(start.getX() - 1, start.getY());
+			GridPoint endGen = new GridPoint(start.getX() - 1, start.getY() + 1);
+			starts.add(startGen);
+			ends.add(endGen);
+		}
+		
+		if(yStep == 1) {
+			GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
+			GridPoint endGen = new GridPoint(end.getX() + 1, end.getY() + 1);
+			starts.add(startGen);
+			ends.add(endGen);
+		} else {
+			GridPoint startGen = new GridPoint(end.getX() + 1, end.getY() - 1);
+			GridPoint endGen = new GridPoint(end.getX(), end.getY() - 1);
+			starts.add(startGen);
+			ends.add(endGen);
+		}
 		for(int i = start.getX(); i != end.getX(); i += xStep) {
 			if(!StreamSupport.stream(grid.getObjectsAt(i, start.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
 				roads.add(new GridPoint(i, start.getY()));
@@ -271,6 +322,27 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		}
 		
 		
+	}
+	
+	private void filterEndPoints(List<GridPoint> pts, Grid<Object> grid, ContinuousSpace<Object> space) {
+		List<GridPoint> localArray = new ArrayList<GridPoint>();
+		for (int i = 0; i < pts.size(); i++) {
+			GridPoint pt = pts.get(i);
+			if(StreamSupport.stream(grid.getObjectsAt(pt.getX(), pt.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+				//System.out.println("removed");
+				localArray.add(pt);
+			}
+		}
+		pts.removeAll(localArray);
+	}
+	
+	private void filterEndPointTest(List<GridPoint> pts) {
+		for (int i = 0; i < pts.size(); i++) {
+			GridPoint pt = pts.get(i);
+			if(roads.contains(pt)) {
+				pts.remove(pt);
+			}
+		}
 	}
 	
 	private void generateExits(Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
