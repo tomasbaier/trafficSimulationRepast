@@ -12,6 +12,6 @@
     <string>SettingsRegistryId</string>
     <string>Repast.registry</string>
     <string>LastLoadedScenario</string>
-    <string>C:\Users\tomas\repast-workspace\trafficSim\trafficSim.rs</string>
+    <string>C:\Users\tomas\git\trafficSimulationRepast\trafficSim\trafficSim.rs</string>
   </hashtable>
 </simphony.settings.SettingsRegistry>
