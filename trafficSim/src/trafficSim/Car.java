@@ -136,6 +136,7 @@ public class Car {
 				break;
 			}
 		}
+		
 		/*
 		for(int i = 0; i < roads.size(); i++) {
 			int random = (int)(Math.random() * roads.size());
@@ -151,6 +152,10 @@ public class Car {
 		//System.out.println("GOAL: " + goal);
 		//System.out.println("_____________________________");
 		driveTo(goal);
+	}
+	
+	private void driveTest() {
+		
 	}
 	
 	private List<GridPoint> getNeighborRoads(GridPoint pt){
@@ -176,6 +181,10 @@ public class Car {
 			}
 		}
 		return roads;
+	}
+	
+	private void checkIfTurn() {
+		
 	}
 	
 	public void driveTo(GridPoint pt) {

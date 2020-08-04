@@ -35,6 +35,7 @@ public class RoadBuilder implements ContextBuilder<Object> {
 	private List<Integer> usedY = new ArrayList<Integer>();
 	private List<GridPoint> ends = new ArrayList<GridPoint>();
 	private List<GridPoint> starts = new ArrayList<GridPoint>();
+	private List<GridPoint> crossroads = new ArrayList<GridPoint>();
 	
 
 	@Override
@@ -45,14 +46,13 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		context.setId("trafficSim");
 		
 		ContinuousSpaceFactory spaceFactory = ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(null);
-		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context, new RandomCartesianAdder<Object>(), new repast.simphony.space.continuous.StrictBorders(), 50, 50);
+		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context, new RandomCartesianAdder<Object>(), new repast.simphony.space.continuous.StrictBorders(), 100, 100);
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
-		Grid<Object> grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new WrapAroundBorders(), new SimpleGridAdder<Object>(), true, 50 ,50));
+		Grid<Object> grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new WrapAroundBorders(), new SimpleGridAdder<Object>(), true, 100 ,100));
 		
-		createExits(10, grid, 4);
+		createExits(30, grid, 4);
+		
 		/*
-		
-
 		for(int i = 0; i < exits.size(); i++) {
 			ExitStart exit = new ExitStart(space, grid);
 			context.add(exit);
@@ -62,7 +62,8 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			space.moveTo(exit, pt.getX(), pt.getY());
 			context.add(exit);	
 		}
-			 */	
+		*/
+		
 		while(!exits.isEmpty()) {
 			GridPoint start = exits.get(0);
 			GridPoint end = exits.get(1);
@@ -93,6 +94,10 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			space.moveTo(exit, exitCoords.getX(), exitCoords.getY());
 			context.add(exit);
 		}
+		
+
+		findCrossdroads(grid, space, context);
+		//System.out.println(crossroads);
 		//generateExits(grid, space, context);
 		
 		/*
@@ -256,6 +261,8 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		int xStep = xDif < 0 ? -1 : 1;
 		int yStep = yDif < 0 ? -1 : 1;
 		
+		System.out.println("START - " + start + " END - " + end);
+		
 		if(xStep == -1) {
 			GridPoint startGen = new GridPoint(start.getX() + 1, start.getY() + 1);
 			GridPoint endGen = new GridPoint(start.getX() + 1, start.getY());
@@ -267,18 +274,37 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			starts.add(startGen);
 			ends.add(endGen);
 		}
+
 		
-		if(yStep == 1) {
-			GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
-			GridPoint endGen = new GridPoint(end.getX() + 1, end.getY() + 1);
-			starts.add(startGen);
-			ends.add(endGen);
+		if(start.getY() == end.getY()) {
+			if(start.getY() < end.getY()) {
+				GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
+				GridPoint endGen = new GridPoint(end.getX(), end.getY());
+				starts.add(startGen);
+				ends.add(endGen);
+			} else {
+				GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
+				GridPoint endGen = new GridPoint(end.getX(), end.getY());
+				starts.add(startGen);
+				ends.add(endGen);
+			}
+			
 		} else {
-			GridPoint startGen = new GridPoint(end.getX() + 1, end.getY() - 1);
-			GridPoint endGen = new GridPoint(end.getX(), end.getY() - 1);
-			starts.add(startGen);
-			ends.add(endGen);
+			if(yStep == 1) {
+				GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
+				GridPoint endGen = new GridPoint(end.getX() + 1, end.getY() + 1);
+				starts.add(startGen);
+				ends.add(endGen);
+			} else {
+				GridPoint startGen = new GridPoint(end.getX() + 1, end.getY() - 1);
+				GridPoint endGen = new GridPoint(end.getX(), end.getY() - 1);
+				starts.add(startGen);
+				ends.add(endGen);
+			}
 		}
+		
+		
+		
 		for(int i = start.getX(); i != end.getX(); i += xStep) {
 			if(!StreamSupport.stream(grid.getObjectsAt(i, start.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
 				roads.add(new GridPoint(i, start.getY()));
@@ -460,6 +486,70 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			amount++;
 		}
 		return amount;
+	}
+	
+	private void findCrossdroads(Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
+		
+		for(int x = 2; x < grid.getDimensions().getWidth() - 2; x++) {
+			for(int y = 2; y < grid.getDimensions().getHeight() - 2; y++) {
+				int amount = 0;
+				GridPoint pt1 = new GridPoint(x - 1, y);
+				GridPoint pt2 = new GridPoint(x, y - 1);
+				GridPoint pt3 = new GridPoint(x + 2, y);
+				GridPoint pt4 = new GridPoint(x, y + 2);
+				if(StreamSupport.stream(grid.getObjectsAt(pt1.getX(), pt1.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt1.getX(), pt1.getY() + 1).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(StreamSupport.stream(grid.getObjectsAt(pt2.getX(), pt2.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt2.getX() + 1, pt2.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(StreamSupport.stream(grid.getObjectsAt(pt3.getX(), pt3.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt3.getX(), pt3.getY() + 1).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(StreamSupport.stream(grid.getObjectsAt(pt4.getX(), pt4.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt4.getX() + 1, pt4.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(amount >= 3) {
+					for(int i = 0; i < 4; i++) {
+						int xP = 0;
+						int yP = 0;
+						switch (i) {
+						case 0:
+							xP = 0;
+							yP = 0;
+							break;
+						case 1:
+							xP = 1;
+							yP = 0;
+							break;
+						case 2:
+							xP = 0;
+							yP = 1;
+							break;
+						case 3:
+							xP = 1;
+							yP = 1;
+
+						default:
+							break;
+						}
+						Crossroad cross = new Crossroad(space, grid);
+						context.add(cross);
+						grid.moveTo(cross, x + xP, y + yP);
+						space.moveTo(cross, x + xP, y + yP);
+						context.add(cross);
+					}
+				}
+			}
+		}
 	}
 	
 	/*
