@@ -3,6 +3,7 @@ package trafficSim;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import repast.simphony.context.Context;
@@ -36,34 +37,36 @@ public class RoadBuilder implements ContextBuilder<Object> {
 	private List<GridPoint> ends = new ArrayList<GridPoint>();
 	private List<GridPoint> starts = new ArrayList<GridPoint>();
 	private List<GridPoint> crossroads = new ArrayList<GridPoint>();
+	private List<ExitStart> exitStarts = new ArrayList<ExitStart>();
 	
 
 	@Override
 	public Context build(Context<Object> context) {
+		
+		int gridDims = 100;
 		
 		NetworkBuilder<Object> netBuilder = new NetworkBuilder<Object>("traffic network", context, true);
 		netBuilder.buildNetwork();
 		context.setId("trafficSim");
 		
 		ContinuousSpaceFactory spaceFactory = ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(null);
-		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context, new RandomCartesianAdder<Object>(), new repast.simphony.space.continuous.StrictBorders(), 100, 100);
+		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context, new RandomCartesianAdder<Object>(), new repast.simphony.space.continuous.StrictBorders(), gridDims, gridDims);
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
-		Grid<Object> grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new WrapAroundBorders(), new SimpleGridAdder<Object>(), true, 100 ,100));
+		Grid<Object> grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new WrapAroundBorders(), new SimpleGridAdder<Object>(), true, gridDims ,gridDims));
 		
-		createExits(30, grid, 4);
+		createExits(20, grid, 4);
 		
 		/*
 		for(int i = 0; i < exits.size(); i++) {
-			ExitStart exit = new ExitStart(space, grid);
-			context.add(exit);
+			Entry entry = new Entry(grid,space);
+			context.add(entry);
 			GridPoint pt = exits.get(i);
 			//System.out.println("Generated exit point" + pt);
-			grid.moveTo(exit, pt.getX(), pt.getY());
-			space.moveTo(exit, pt.getX(), pt.getY());
-			context.add(exit);	
+			grid.moveTo(entry, pt.getX(), pt.getY());
+			space.moveTo(entry, pt.getX(), pt.getY());
+			context.add(entry);	
 		}
-		*/
-		
+*/
 		while(!exits.isEmpty()) {
 			GridPoint start = exits.get(0);
 			GridPoint end = exits.get(1);
@@ -71,13 +74,38 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			exits.remove(start);
 			exits.remove(end);
 		}
-		filterEndPoints(starts, grid, space);
-		filterEndPoints(ends, grid, space);
+		//filterEndPoints(starts, grid, space);
+		//filterEndPoints(ends, grid, space);
+		filterEndPointTest(exitStarts, grid, space);
+		
+		
 		/*
 		filterEndPointTest(starts);
 		filterEndPointTest(ends);
 		*/
 		
+		findCrossdroads(grid, space, context);
+		
+		//removeNotSuitable(grid);
+		
+		removeUnsuitableTomTest(exitStarts ,grid);
+		
+		//System.out.println(getNeighborhood(new GridPoint(10, 10)));
+		
+		for(int i = 0; i < exitStarts.size(); i++) {
+			ExitStart exitStart = exitStarts.get(i);
+			GridPoint startCoords = exitStart.getStart();
+			GridPoint exitCoords = exitStart.getExit();
+			Start start = new Start(grid, space);
+			Exit exit = new Exit(grid, space);
+			context.add(start);
+			context.add(exit);
+			grid.moveTo(start, startCoords.getX(), startCoords.getY());
+			space.moveTo(start, startCoords.getX(), startCoords.getY());
+			grid.moveTo(exit, exitCoords.getX(), exitCoords.getY());
+			space.moveTo(exit, exitCoords.getX(), exitCoords.getY());
+		}
+		/*
 		for(int i = 0; i < starts.size(); i++) {
 			GridPoint startCoords = starts.get(i);
 			Start start = new Start(grid, space);
@@ -94,9 +122,10 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			space.moveTo(exit, exitCoords.getX(), exitCoords.getY());
 			context.add(exit);
 		}
+		*/
 		
-
-		findCrossdroads(grid, space, context);
+		
+		
 		//System.out.println(crossroads);
 		//generateExits(grid, space, context);
 		
@@ -112,7 +141,7 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		}
 		*/
 		
-		System.out.println("EXITS - " + exits);
+		//System.out.println("EXITS - " + exits);
 		
 		//System.out.println(availableX);
 		//System.out.println(availableY);
@@ -174,66 +203,11 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			}
 		}
 		*/
+		exitStarts = new ArrayList<ExitStart>();
 		exits = new ArrayList<GridPoint>();
 		starts = new ArrayList<GridPoint>();
 		ends = new ArrayList<GridPoint>();
 		return context;
-	}
-	
-	private void placeRandomRoads(ContinuousSpace<Object> space, Grid<Object> grid, Context<Object> context) {
-		int xDim = (int)(grid.getDimensions().getWidth() / 2);
-		int yDim = (int)(grid.getDimensions().getHeight() / 2);
-		int xRandomNumStart = (int)(Math.random() * xDim);
-		int yRandomNumStart = (int)(Math.random() * yDim);
-		
-		int xRandomNumExit = xDim + (int)(Math.random() * xDim);
-		int yRandomNumExit = yDim + (int)(Math.random() * yDim);
-		
-		int x1 = xRandomNumStart;
-		int y1 = yRandomNumStart;
-		int x2 = xRandomNumExit;
-		int y2 = yRandomNumExit;
-		
-		
-		/*
-		int x1 = startPoint.getX();
-		int y1 = startPoint.getY();
-		int x2 = exitPoint.getX();
-		int y2 = exitPoint.getY();
-		*/
-		
-		//Placement of vertical road
-		for(int i = x1; i <= x2; i++) {
-			Road road = new Road(space, grid);
-			context.add(road);
-			grid.moveTo(road, i, y1);
-			space.moveTo(road, i, y1);
-			context.add(road);
-		}
-		
-		//Placement of horizontal road
-		for(int i = y1; i <= y2; i++) {
-			Road road = new Road(space, grid);
-			context.add(road);
-			grid.moveTo(road, x2, i);
-			space.moveTo(road, x2, i);
-			context.add(road);
-		}
-		
-		//Placement of exits on the start and the end of the road
-		ExitStart start = new ExitStart(space, grid);
-		context.add(start);
-		grid.moveTo(start, x1, y1);
-		space.moveTo(start, x1, y1);
-		context.add(start);
-		exits.add(new GridPoint(x1, y1));
-		
-		ExitStart exit = new ExitStart(space, grid);
-		context.add(exit);
-		grid.moveTo(exit, x2, y2);
-		space.moveTo(exit, x2, y2);
-		context.add(exit);
-		exits.add(new GridPoint(x2, y2));
 	}
 	
 	private void createExits(int amount ,Grid<Object> grid, int distance) {
@@ -263,43 +237,72 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		
 		System.out.println("START - " + start + " END - " + end);
 		
-		if(xStep == -1) {
-			GridPoint startGen = new GridPoint(start.getX() + 1, start.getY() + 1);
-			GridPoint endGen = new GridPoint(start.getX() + 1, start.getY());
-			starts.add(startGen);
-			ends.add(endGen);
+		if(start.getX() == end.getX()) {
+			if(start.getX() < end.getX()) {
+				System.out.println("start.getX() < end.getX()");
+				GridPoint startGen = new GridPoint(start.getX(), start.getY() + 1);
+				GridPoint endGen = new GridPoint(start.getX(), start.getY());
+				starts.add(startGen);
+				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
+			} else {
+				System.out.println("start.getX() > end.getX()");
+				GridPoint startGen = new GridPoint(start.getX() + 1, start.getY() - 1);
+				GridPoint endGen = new GridPoint(start.getX(), start.getY() - 1);
+				starts.add(startGen);
+				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
+			}
 		} else {
-			GridPoint startGen = new GridPoint(start.getX() - 1, start.getY());
-			GridPoint endGen = new GridPoint(start.getX() - 1, start.getY() + 1);
-			starts.add(startGen);
-			ends.add(endGen);
+			System.out.println("NORMAL START");
+			if(xStep == -1) {
+				GridPoint startGen = new GridPoint(start.getX() + 1, start.getY() + 1);
+				GridPoint endGen = new GridPoint(start.getX() + 1, start.getY());
+				starts.add(startGen);
+				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
+			} else {
+				GridPoint startGen = new GridPoint(start.getX() - 1, start.getY());
+				GridPoint endGen = new GridPoint(start.getX() - 1, start.getY() + 1);
+				starts.add(startGen);
+				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
+			}
 		}
+		
 
 		
 		if(start.getY() == end.getY()) {
 			if(start.getY() < end.getY()) {
+				System.out.println("start.getY() < end.getY()");
 				GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
 				GridPoint endGen = new GridPoint(end.getX(), end.getY());
 				starts.add(startGen);
 				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
 			} else {
+				System.out.println("start.getY() > end.getY()");
 				GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
 				GridPoint endGen = new GridPoint(end.getX(), end.getY());
 				starts.add(startGen);
 				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
 			}
 			
 		} else {
+			System.out.println("NORMAL END");
 			if(yStep == 1) {
 				GridPoint startGen = new GridPoint(end.getX(), end.getY() + 1);
 				GridPoint endGen = new GridPoint(end.getX() + 1, end.getY() + 1);
 				starts.add(startGen);
 				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
 			} else {
 				GridPoint startGen = new GridPoint(end.getX() + 1, end.getY() - 1);
 				GridPoint endGen = new GridPoint(end.getX(), end.getY() - 1);
 				starts.add(startGen);
 				ends.add(endGen);
+				exitStarts.add(new ExitStart(startGen, endGen));
 			}
 		}
 		
@@ -362,36 +365,16 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		pts.removeAll(localArray);
 	}
 	
-	private void filterEndPointTest(List<GridPoint> pts) {
+	private void filterEndPointTest(List<ExitStart> pts, Grid<Object> grid, ContinuousSpace<Object> space) {
+		List<ExitStart> localArray = new ArrayList<ExitStart>();
 		for (int i = 0; i < pts.size(); i++) {
-			GridPoint pt = pts.get(i);
-			if(roads.contains(pt)) {
-				pts.remove(pt);
+			GridPoint pt = pts.get(i).getStart();
+			if(StreamSupport.stream(grid.getObjectsAt(pt.getX(), pt.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+				//System.out.println("removed");
+				localArray.add(pts.get(i));
 			}
 		}
-	}
-	
-	private void generateExits(Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
-		
-		for (GridPoint pt : roads) {
-			int surroundingRoads = getNeighborRoads(pt, grid);
-			if(surroundingRoads == 1) {
-				exits.add(new GridPoint(pt.getX(), pt.getY()));
-				ExitStart exit = new ExitStart(space, grid);
-				context.add(exit);
-				grid.moveTo(exit, pt.getX(), pt.getY());
-				space.moveTo(exit, pt.getX(), pt.getY());
-				context.add(exit);
-			}
-			if(surroundingRoads > 2) {
-				Crossroad cross = new Crossroad(space, grid);
-				context.add(cross);
-				grid.moveTo(cross, pt.getX(), pt.getY());
-				space.moveTo(cross, pt.getX(), pt.getY());
-				context.add(cross);
-			}
-			//System.out.println(getNeighborRoads(pt, grid));
-		}
+		pts.removeAll(localArray);
 	}
 	
 	/*
@@ -489,7 +472,6 @@ public class RoadBuilder implements ContextBuilder<Object> {
 	}
 	
 	private void findCrossdroads(Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
-		
 		for(int x = 2; x < grid.getDimensions().getWidth() - 2; x++) {
 			for(int y = 2; y < grid.getDimensions().getHeight() - 2; y++) {
 				int amount = 0;
@@ -541,11 +523,224 @@ public class RoadBuilder implements ContextBuilder<Object> {
 						default:
 							break;
 						}
+						crossroads.add(new GridPoint(x + xP, y + yP));
 						Crossroad cross = new Crossroad(space, grid);
 						context.add(cross);
 						grid.moveTo(cross, x + xP, y + yP);
 						space.moveTo(cross, x + xP, y + yP);
 						context.add(cross);
+					}
+				}
+			}
+		}
+	}
+	
+	private void findCrossdroadsTest(Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
+		for(int x = 2; x < grid.getDimensions().getWidth() - 2; x++) {
+			for(int y = 2; y < grid.getDimensions().getHeight() - 2; y++) {
+				int amount = 0;
+				GridPoint pt1 = new GridPoint(x - 1, y);
+				GridPoint pt2 = new GridPoint(x, y - 1);
+				GridPoint pt3 = new GridPoint(x + 2, y);
+				GridPoint pt4 = new GridPoint(x, y + 2);
+				if(StreamSupport.stream(grid.getObjectsAt(pt1.getX(), pt1.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt1.getX(), pt1.getY() + 1).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(StreamSupport.stream(grid.getObjectsAt(pt2.getX(), pt2.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt2.getX() + 1, pt2.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(StreamSupport.stream(grid.getObjectsAt(pt3.getX(), pt3.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt3.getX(), pt3.getY() + 1).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(StreamSupport.stream(grid.getObjectsAt(pt4.getX(), pt4.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+					if(StreamSupport.stream(grid.getObjectsAt(pt4.getX() + 1, pt4.getY()).spliterator(), false).anyMatch(Road -> Road.equals(Road))) {
+						amount++;
+					}
+				}
+				if(amount >= 3) {
+					for(int i = 0; i < 4; i++) {
+						int xP = 0;
+						int yP = 0;
+						switch (i) {
+						case 0:
+							xP = 0;
+							yP = 0;
+							break;
+						case 1:
+							xP = 1;
+							yP = 0;
+							break;
+						case 2:
+							xP = 0;
+							yP = 1;
+							break;
+						case 3:
+							xP = 1;
+							yP = 1;
+
+						default:
+							break;
+						}
+						
+						Crossroad cross = new Crossroad(space, grid);
+						context.add(cross);
+						grid.moveTo(cross, x + xP, y + yP);
+						space.moveTo(cross, x + xP, y + yP);
+						context.add(cross);
+					}
+				}
+			}
+		}
+	}
+	
+	private List<GridPoint> getNeighborhood(GridPoint pt) {
+		List<GridPoint> result = new ArrayList<GridPoint>();
+		
+		for(int j = pt.getY() - 1; j <= pt.getY() + 1; j++) {
+			for(int i = pt.getX() - 1; i <= pt.getX() + 1; i++) {
+				result.add(new GridPoint(i, j));
+			}
+		}
+		return result;
+	}
+	
+	/*
+	private boolean existsAt(Object obj, GridPoint pt, Grid<Object> grid) {
+		boolean result = StreamSupport.stream(grid.getObjectsAt(pt.getX(), pt.getY()).spliterator(), false).anyMatch(obj -> obj.equals(obj));
+	}
+	*/
+	
+	private Object[] ondraObjectsAt(GridPoint pt, Grid<Object> grid){
+		Stream<Object> stream = StreamSupport.stream(grid.getObjectsAt(pt.getX(), pt.getY()).spliterator(), false);
+		return stream.toArray();
+		
+	}
+	
+	private void removeUnsuitableTom(Grid<Object> grid) {
+		List<GridPoint> localStarts = new ArrayList<GridPoint>();
+		List<GridPoint> localEnds = new ArrayList<GridPoint>();
+		for (int i = 0; i < starts.size(); i++) {
+			GridCellNgh<Crossroad> nghCreator = new GridCellNgh<Crossroad>(grid, starts.get(i), Crossroad.class, 1, 1);
+			List<GridCell<Crossroad>> gridCells = nghCreator.getNeighborhood(false);
+			
+			GridCellNgh<Road> nghCreator2 = new GridCellNgh<Road>(grid, starts.get(i), Road.class, 1, 1);
+			List<GridCell<Road>> gridCells2 = nghCreator2.getNeighborhood(false);
+			int amountOfCrossroads = 0;
+			int amountOfRoads = 0;
+			for (GridCell<Crossroad> gridCell : gridCells) {
+				amountOfCrossroads += gridCell.size();
+			}
+			for(GridCell<Road> gridCell : gridCells2) {
+				amountOfRoads += gridCell.size();
+			}
+			if(amountOfCrossroads > 0) {
+				localStarts.add(starts.get(i));
+			}
+			if(amountOfRoads > 2) {
+				localStarts.add(starts.get(i));
+			}
+		}
+		for (int i = 0; i < ends.size(); i++) {
+			GridCellNgh<Crossroad> nghCreator = new GridCellNgh<Crossroad>(grid, ends.get(i), Crossroad.class, 1, 1);
+			List<GridCell<Crossroad>> gridCells = nghCreator.getNeighborhood(false);
+			
+			GridCellNgh<Road> nghCreator2 = new GridCellNgh<Road>(grid, ends.get(i), Road.class, 1, 1);
+			List<GridCell<Road>> gridCells2 = nghCreator2.getNeighborhood(false);
+			int amountOfCrossroads = 0;
+			int amountOfRoads = 0;
+			for (GridCell<Crossroad> gridCell : gridCells) {
+				amountOfCrossroads += gridCell.size();
+			}
+			for(GridCell<Road> gridCell : gridCells2) {
+				amountOfRoads += gridCell.size();
+			}
+			if(amountOfCrossroads > 0) {
+				localEnds.add(ends.get(i));
+			}
+			if(amountOfRoads > 2) {
+				localEnds.add(ends.get(i));
+			}
+		}
+		starts.removeAll(localStarts);
+		ends.removeAll(localEnds);
+	}
+	
+	private void removeUnsuitableTomTest(List<ExitStart> endNodes ,Grid<Object> grid) {
+		List<ExitStart> localExitStarts = new ArrayList<ExitStart>();
+		for (int i = 0; i < endNodes.size(); i++) {
+			GridCellNgh<Crossroad> nghCreator = new GridCellNgh<Crossroad>(grid, endNodes.get(i).getStart(), Crossroad.class, 1, 1);
+			List<GridCell<Crossroad>> gridCells = nghCreator.getNeighborhood(false);
+			
+			GridCellNgh<Road> nghCreator2 = new GridCellNgh<Road>(grid, endNodes.get(i).getStart(), Road.class, 1, 1);
+			List<GridCell<Road>> gridCells2 = nghCreator2.getNeighborhood(false);
+			
+			int amountOfCrossroads = 0;
+			int amountOfRoads = 0;
+			for (GridCell<Crossroad> gridCell : gridCells) {
+				amountOfCrossroads += gridCell.size();
+			}
+			for(GridCell<Road> gridCell : gridCells2) {
+				amountOfRoads += gridCell.size();
+			}
+			if(amountOfCrossroads > 0 || amountOfRoads > 2) {
+				localExitStarts.add(endNodes.get(i));
+				System.out.println("Amount of Crossroads - " + amountOfCrossroads + "Amount of Roads - " + amountOfRoads);
+			}
+		}
+		/*
+		for (int i = 0; i < ends.size(); i++) {
+			GridCellNgh<Crossroad> nghCreator = new GridCellNgh<Crossroad>(grid, ends.get(i), Crossroad.class, 1, 1);
+			List<GridCell<Crossroad>> gridCells = nghCreator.getNeighborhood(false);
+			
+			GridCellNgh<Road> nghCreator2 = new GridCellNgh<Road>(grid, ends.get(i), Road.class, 1, 1);
+			List<GridCell<Road>> gridCells2 = nghCreator2.getNeighborhood(false);
+			int amountOfCrossroads = 0;
+			int amountOfRoads = 0;
+			for (GridCell<Crossroad> gridCell : gridCells) {
+				amountOfCrossroads += gridCell.size();
+			}
+			for(GridCell<Road> gridCell : gridCells2) {
+				amountOfRoads += gridCell.size();
+			}
+			if(amountOfCrossroads > 0 || amountOfRoads > 2) {
+				localEnds.add(ends.get(i));
+				
+			}
+		}
+		for (GridPoint end : localEnds) {
+			
+		}
+		*/
+		endNodes.removeAll(localExitStarts);
+	}
+	
+	private void removeNotSuitable(Grid<Object> grid) {
+		for(int i = starts.size() - 1; i <= 0; i--) {
+			GridPoint start = starts.get(i);
+			List<GridPoint> neighborhood = getNeighborhood(start);
+			for (GridPoint neighbor : neighborhood) {
+				for (GridPoint crossroad : crossroads) {
+					if(crossroad.getX() == neighbor.getX() && crossroad.getY() == neighbor.getY()) {
+						starts.remove(start);
+						i++;
+					}
+				}
+			}
+		}
+		for(int i = ends.size() - 1; i <= 0 ; i--) {
+			GridPoint start = ends.get(i);
+			List<GridPoint> neighborhood = getNeighborhood(start);
+			for (GridPoint neighbor : neighborhood) {
+				for (GridPoint crossroad : crossroads) {
+					if(crossroad.getX() == neighbor.getX() && crossroad.getY() == neighbor.getY()) {
+						ends.remove(start);
+						i++;
 					}
 				}
 			}

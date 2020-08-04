@@ -183,8 +183,19 @@ public class Car {
 		return roads;
 	}
 	
-	private void checkIfTurn() {
-		
+	private boolean checkIfTurn(GridPoint currentPoint, GridPoint checkingPoint) {
+		boolean isTurn = false;
+		int x = currentPoint.getX() - checkingPoint.getX();
+ 		int y = currentPoint.getX() - checkingPoint.getX();
+ 		GridPoint pointToCheck = new GridPoint(2 * x, 2 * y);
+ 		for (Object obj : grid.getObjectsAt(pointToCheck.getX(), pointToCheck.getY())) {
+			if(obj instanceof Road) {
+				isTurn = true;
+			} else {
+				isTurn = false;
+			}
+		}
+ 		return isTurn;
 	}
 	
 	public void driveTo(GridPoint pt) {

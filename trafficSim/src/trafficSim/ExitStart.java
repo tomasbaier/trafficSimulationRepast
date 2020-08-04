@@ -2,15 +2,32 @@ package trafficSim;
 
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.grid.Grid;
+import repast.simphony.space.grid.GridPoint;
 
 public class ExitStart {
 	
-	private ContinuousSpace<Object> space;
-	private Grid<Object> grid;
+	private GridPoint exit;
+	private GridPoint start;
 	
-	public ExitStart(ContinuousSpace<Object> space, Grid<Object> grid) {
-		this.space = space;
-		this.grid = grid;
+	public ExitStart(GridPoint start, GridPoint exit) {
+		this.exit = exit;
+		this.start = start;
+	}
+
+	public GridPoint getExit() {
+		return exit;
+	}
+
+	public void setExit(GridPoint exit) {
+		this.exit = exit;
+	}
+
+	public GridPoint getStart() {
+		return start;
+	}
+
+	public void setStart(GridPoint start) {
+		this.start = start;
 	}
 
 }
