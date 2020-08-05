@@ -2,15 +2,17 @@ package trafficSim;
 
 import repast.simphony.space.continuous.ContinuousSpace;
 import repast.simphony.space.grid.Grid;
+import repast.simphony.space.grid.GridPoint;
 
 public class Entry {
 	
-	private Grid<Object> grid;
-	private ContinuousSpace<Object> space;
+	private GridPoint entry1;
+	private GridPoint entry2;
 	
-	public Entry(Grid<Object> grid, ContinuousSpace<Object> space) {
-		this.grid = grid;
-		this.space = space;
+	public Entry(GridPoint entry1, GridPoint entry2) {
+		this.entry1 = entry1;
+		this.entry2 = entry2;
 	}
 
+	
 }

@@ -8,15 +8,11 @@
     </entry>
     <entry>
       <string>trafficSim.Car</string>
-      <string>repast.simphony.visualizationOGL2D.DefaultStyleOGL2D</string>
+      <string>repast.simphony.visualization.editedStyle.EditedStyle2D</string>
     </entry>
     <entry>
       <string>trafficSim.Crossroad</string>
       <string>repast.simphony.visualization.editedStyle.EditedStyle2D</string>
-    </entry>
-    <entry>
-      <string>trafficSim.ExitStart</string>
-      <string>repast.simphony.visualizationOGL2D.DefaultStyleOGL2D</string>
     </entry>
     <entry>
       <string>trafficSim.Exit</string>
@@ -34,15 +30,11 @@
     </entry>
     <entry>
       <string>trafficSim.Car</string>
-      <null/>
+      <string>trafficSim.Car.style_5.xml</string>
     </entry>
     <entry>
       <string>trafficSim.Crossroad</string>
       <string>trafficSim.Crossroad.style_1.xml</string>
-    </entry>
-    <entry>
-      <string>trafficSim.ExitStart</string>
-      <null/>
     </entry>
     <entry>
       <string>trafficSim.Exit</string>
@@ -63,7 +55,7 @@
     <pType>LAST</pType>
     <duration>-1.0</duration>
     <frequency>REPEAT</frequency>
-    <hashCode>177318546</hashCode>
+    <hashCode>1952551772</hashCode>
   </schedParams>
   <layoutClassName>foo.bar.baz</layoutClassName>
   <layoutProjection>space</layoutProjection>
@@ -75,15 +67,11 @@
     </entry>
     <entry>
       <string>trafficSim.Car</string>
-      <int>5</int>
+      <int>4</int>
     </entry>
     <entry>
       <string>trafficSim.Crossroad</string>
       <int>1</int>
-    </entry>
-    <entry>
-      <string>trafficSim.ExitStart</string>
-      <int>4</int>
     </entry>
     <entry>
       <string>trafficSim.Exit</string>

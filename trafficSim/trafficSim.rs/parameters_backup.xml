@@ -12,12 +12,6 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="car_count" displayName="Car count" type="int" 
-						defaultValue="10" 
-						isReadOnly="false" 
-						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
-									
-		/>
 				<parameter name="grid_dimensions" displayName="Grid Dimensions" type="int" 
 						defaultValue="100" 
 						isReadOnly="false" 

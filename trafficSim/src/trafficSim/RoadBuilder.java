@@ -13,6 +13,8 @@ import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.context.space.grid.GridFactory;
 import repast.simphony.context.space.grid.GridFactoryFinder;
 import repast.simphony.dataLoader.ContextBuilder;
+import repast.simphony.engine.environment.RunEnvironment;
+import repast.simphony.parameter.Parameters;
 import repast.simphony.query.space.grid.GridCell;
 import repast.simphony.query.space.grid.GridCellNgh;
 import repast.simphony.random.RandomHelper;
@@ -43,7 +45,9 @@ public class RoadBuilder implements ContextBuilder<Object> {
 	@Override
 	public Context build(Context<Object> context) {
 		
-		int gridDims = 100;
+		Parameters params = RunEnvironment.getInstance().getParameters();
+		
+		int gridDims = params.getInteger("grid_dimensions");
 		
 		NetworkBuilder<Object> netBuilder = new NetworkBuilder<Object>("traffic network", context, true);
 		netBuilder.buildNetwork();
@@ -54,7 +58,12 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
 		Grid<Object> grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new WrapAroundBorders(), new SimpleGridAdder<Object>(), true, gridDims ,gridDims));
 		
-		createExits(20, grid, 4);
+		
+		int exitCount = params.getInteger("exit_count");
+		
+		//createExits(20, grid, 4);
+		createEntries(exitCount, grid, 4);
+		//System.out.println(exits);
 		
 		/*
 		for(int i = 0; i < exits.size(); i++) {
@@ -70,10 +79,22 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		while(!exits.isEmpty()) {
 			GridPoint start = exits.get(0);
 			GridPoint end = exits.get(1);
+			System.out.println("START - " + start + " END - " + end);
+			generateRoadsAlt(start, end, grid, space, context);
+			generateExitStarts(start, end, grid, space, context);
+			exits.remove(start);
+			exits.remove(end);
+		}
+		
+		/*
+		while(!exits.isEmpty()) {
+			GridPoint start = exits.get(0);
+			GridPoint end = exits.get(1);
 			generateRoads(start, end, grid, space, context);
 			exits.remove(start);
 			exits.remove(end);
 		}
+		*/
 		//filterEndPoints(starts, grid, space);
 		//filterEndPoints(ends, grid, space);
 		filterEndPointTest(exitStarts, grid, space);
@@ -105,6 +126,7 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			grid.moveTo(exit, exitCoords.getX(), exitCoords.getY());
 			space.moveTo(exit, exitCoords.getX(), exitCoords.getY());
 		}
+		
 		/*
 		for(int i = 0; i < starts.size(); i++) {
 			GridPoint startCoords = starts.get(i);
@@ -125,21 +147,22 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		*/
 		
 		
-		
 		//System.out.println(crossroads);
 		//generateExits(grid, space, context);
 		
-		/*
-		for(int i = 0; i < 5; i++) {
-			//SimUtilities.shuffle(exits, RandomHelper.createUniform());
-			GridPoint carSpawn = exits.get(i);
-			Car car = new Car(space, grid, carSpawn.getX(), carSpawn.getY(), exits);
+		
+		int carCount = params.getInteger("car_count");
+		
+		for(int i = 0; i < carCount; i++) {
+			SimUtilities.shuffle(exitStarts, RandomHelper.createUniform());
+			GridPoint carSpawn = exitStarts.get(0).getStart();
+			Car car = new Car(space, grid, carSpawn);
 			context.add(car);
 			space.moveTo(car, carSpawn.getX(), carSpawn.getY());
 			grid.moveTo(car, carSpawn.getX(), carSpawn.getY());
 			context.add(car);
 		}
-		*/
+		
 		
 		//System.out.println("EXITS - " + exits);
 		
@@ -203,11 +226,98 @@ public class RoadBuilder implements ContextBuilder<Object> {
 			}
 		}
 		*/
+		roads = new ArrayList<GridPoint>();
 		exitStarts = new ArrayList<ExitStart>();
 		exits = new ArrayList<GridPoint>();
 		starts = new ArrayList<GridPoint>();
 		ends = new ArrayList<GridPoint>();
 		return context;
+	}
+	
+	private void createEntries(int amount, Grid<Object> grid, int distance) {
+		GridPoint pt1 = null;
+		GridPoint pt2 = null;
+		while(exits.size() < amount * 2) {
+			if(Math.random() < 0.5) {
+				int randomY1 = (int)(Math.random() * (grid.getDimensions().getHeight() / 2) + 2);
+				//int randomY1 = (int)(Math.random() * ((grid.getDimensions().getHeight() - plus) / 2) + plus);
+				int testerX = (int)(Math.random() * grid.getDimensions().getWidth());
+				int subtractor = testerX < (grid.getDimensions().getWidth() / 2) ? 2 : -2;
+				int randomX = testerX + subtractor;
+				//int randomX = (int)(Math.random() * (grid.getDimensions().getWidth() - plus)) + plus;
+				int randomY2 = grid.getDimensions().getHeight() / 2 + ((int)(Math.random() * (grid.getDimensions().getHeight()) / 2) - 2);
+				//int randomY2 = ((grid.getDimensions().getHeight() / 2)  - plus) + ((int)(Math.random() * (grid.getDimensions().getHeight() - plus) / 2) - plus);
+				pt1 = new GridPoint(randomX, randomY1);
+				pt2 = new GridPoint(randomX, randomY2);
+			} else {
+				int randomX1 = (int)(Math.random() * (grid.getDimensions().getWidth()) / 2 + 2);
+				//int randomX1 = (int)(Math.random() * ((grid.getDimensions().getWidth() - plus) / 2) + plus);
+				int testerY = (int)(Math.random() * grid.getDimensions().getHeight());
+				int subtractor = testerY < (grid.getDimensions().getHeight() / 2) ? 2 : -2;
+				int randomY = testerY + subtractor;
+				//int randomY = (int)(Math.random() * (grid.getDimensions().getHeight() - plus) + plus);
+				int randomX2 = grid.getDimensions().getWidth() / 2 + (int)(Math.random() * (grid.getDimensions().getWidth() / 2) - 2);
+				pt1 = new GridPoint(randomX1, randomY);
+				pt2 = new GridPoint(randomX2, randomY);
+			}
+			
+			if(!validateAlt(pt1, exits, distance) && !validateAlt(pt2, exits, distance)) {
+				exits.add(pt1);
+				exits.add(pt2);
+			}
+		}
+	}
+	
+	private void generateExitStarts(GridPoint startPT, GridPoint endPT, Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
+		if(startPT.getX() == endPT.getX()) {
+			GridPoint start1 = new GridPoint(startPT.getX() + 1, startPT.getY() - 1);
+			GridPoint exit1 = new GridPoint(startPT.getX(), startPT.getY() - 1);
+			
+			starts.add(start1);
+			ends.add(exit1);
+			
+			exitStarts.add(new ExitStart(start1, exit1));
+			
+			GridPoint start2 = new GridPoint(endPT.getX(), endPT.getY() + 1);
+			GridPoint exit2 = new GridPoint(endPT.getX() + 1, endPT.getY() + 1);
+			
+			starts.add(start2);
+			ends.add(start2);		
+			
+			exitStarts.add(new ExitStart(start2, exit2));
+		}
+		if(startPT.getY() == endPT.getY()) {
+			GridPoint start1 = new GridPoint(startPT.getX() - 1, startPT.getY());
+			GridPoint exit1 = new GridPoint(startPT.getX() - 1, startPT.getY() + 1);
+			
+			starts.add(start1);
+			ends.add(exit1);
+			
+			exitStarts.add(new ExitStart(start1, exit1));
+			
+			GridPoint start2 = new GridPoint(endPT.getX() + 1, endPT.getY() + 1);
+			GridPoint exit2 = new GridPoint(endPT.getX() + 1, endPT.getY());
+			
+			starts.add(start2);
+			ends.add(exit2);
+			
+			exitStarts.add(new ExitStart(start2, exit2));
+		}
+	}
+	
+	private void createEntriesY(int amount, Grid<Object> grid, int distance) {
+		while(exits.size() < amount * 2) {
+			System.out.println("TEST");
+			int randomY1 = (int)(Math.random() * ((grid.getDimensions().getHeight()) / 2));
+			int randomX = (int)(Math.random() * ((grid.getDimensions().getWidth()) / 2));
+			int randomY2 = grid.getDimensions().getHeight() + (int)(Math.random() * ((grid.getDimensions().getHeight()) / 2));
+			GridPoint pt1 = new GridPoint(randomX, randomY1);
+			GridPoint pt2 = new GridPoint(randomX, randomY2);
+			if(!validateAlt(pt1, exits, distance) && !validateAlt(pt2, exits, distance)) {
+				exits.add(pt1);
+				exits.add(pt2);
+			}
+		}
 	}
 	
 	private void createExits(int amount ,Grid<Object> grid, int distance) {
@@ -225,6 +335,52 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		//System.out.println("Used Y - " + usedY);
 		usedX = new ArrayList<Integer>();
 		usedY = new ArrayList<Integer>();
+	}
+	
+	private void generateRoadsAlt(GridPoint start, GridPoint end, Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
+		if(start.getX() == end.getX()) {
+			//System.out.println("start.getX() == end.getX()");
+			for(int i = start.getY(); i != end.getY() + 1; i ++) {
+				roads.add(new GridPoint(start.getX(), i));
+				roads.add(new GridPoint(start.getX(), i + 1));
+				Road road = new Road(space, grid);
+				Road road2 = new Road(space, grid);
+				//System.out.println("ROAD - " + road);
+				context.add(road);
+				context.add(road2);
+				//Placement of first road
+				grid.moveTo(road, start.getX(), i);
+				space.moveTo(road, start.getX(), i);
+				
+				grid.moveTo(road2, start.getX() + 1, i);
+				space.moveTo(road2, start.getX() + 1, i);
+				//Placement of road next to the one generated before
+				context.add(road);
+				context.add(road2);
+			}
+		}
+		if(start.getY() == end.getY()) {
+			//System.out.println("start.getY() == end.getY()");
+			for(int i = start.getX(); i != end.getX() + 1; i++) {
+				roads.add(new GridPoint(i, start.getY()));
+				roads.add(new GridPoint(i + 1, start.getY()));
+				
+				Road road = new Road(space, grid);
+				Road road2 = new Road(space, grid);
+				
+				context.add(road);
+				context.add(road2);
+				
+				grid.moveTo(road, i, start.getY());
+				space.moveTo(road, i, start.getY());
+				
+				grid.moveTo(road2, i , start.getY() + 1);
+				space.moveTo(road2,i , start.getY() + 1);
+				
+				context.add(road);
+				context.add(road2);
+			}
+		}
 	}
 	
 	private void generateRoads(GridPoint start, GridPoint end, Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
@@ -247,8 +403,8 @@ public class RoadBuilder implements ContextBuilder<Object> {
 				exitStarts.add(new ExitStart(startGen, endGen));
 			} else {
 				System.out.println("start.getX() > end.getX()");
-				GridPoint startGen = new GridPoint(start.getX() + 1, start.getY() - 1);
-				GridPoint endGen = new GridPoint(start.getX(), start.getY() - 1);
+				GridPoint startGen = new GridPoint(start.getX() + 1, start.getY());
+				GridPoint endGen = new GridPoint(start.getX(), start.getY());
 				starts.add(startGen);
 				ends.add(endGen);
 				exitStarts.add(new ExitStart(startGen, endGen));
@@ -470,6 +626,7 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		}
 		return amount;
 	}
+	
 	
 	private void findCrossdroads(Grid<Object> grid, ContinuousSpace<Object> space, Context<Object> context) {
 		for(int x = 2; x < grid.getDimensions().getWidth() - 2; x++) {
