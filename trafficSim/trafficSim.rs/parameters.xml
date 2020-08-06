@@ -6,6 +6,12 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
+				<parameter name="closed_interval" displayName="Closed interval" type="int" 
+						defaultValue="3" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
 				<parameter name="exit_count" displayName="Exit count" type="int" 
 						defaultValue="50" 
 						isReadOnly="false" 
@@ -13,13 +19,19 @@
 									
 		/>
 				<parameter name="car_count" displayName="Car count" type="int" 
-						defaultValue="10" 
+						defaultValue="500" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
 				<parameter name="grid_dimensions" displayName="Grid Dimensions" type="int" 
 						defaultValue="100" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="open_interval" displayName="Open interval" type="int" 
+						defaultValue="6" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									

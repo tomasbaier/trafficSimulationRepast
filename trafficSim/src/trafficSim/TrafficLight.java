@@ -1,8 +1,6 @@
 package trafficSim;
 
 import repast.simphony.engine.schedule.ScheduledMethod;
-import repast.simphony.space.continuous.ContinuousSpace;
-import repast.simphony.space.grid.Grid;
 
 public class TrafficLight {
 	
@@ -19,7 +17,6 @@ public class TrafficLight {
 		stepCounter++;
 		allowedDir = (stepCounter / (openInterval + closedInterval)) % 4;
 		if(stepCounter % (openInterval + closedInterval) < closedInterval) allowedDir = -1;
-		System.out.println("counter: " + stepCounter + "openDir: " + allowedDir );
 	}
 
 	public int getAllowedDir() {

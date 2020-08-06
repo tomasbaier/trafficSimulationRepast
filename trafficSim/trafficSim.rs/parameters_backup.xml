@@ -12,8 +12,20 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
+				<parameter name="car_count" displayName="Car count" type="int" 
+						defaultValue="500" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
 				<parameter name="grid_dimensions" displayName="Grid Dimensions" type="int" 
 						defaultValue="100" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="open_interval" displayName="Open interval" type="int" 
+						defaultValue="6" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									

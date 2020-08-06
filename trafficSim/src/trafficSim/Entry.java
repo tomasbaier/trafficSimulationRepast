@@ -1,7 +1,5 @@
 package trafficSim;
 
-import repast.simphony.space.continuous.ContinuousSpace;
-import repast.simphony.space.grid.Grid;
 import repast.simphony.space.grid.GridPoint;
 
 public class Entry {
