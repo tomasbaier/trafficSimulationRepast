@@ -62,7 +62,7 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		int exitCount = params.getInteger("exit_count");
 		
 		//createExits(20, grid, 4);
-		createEntries(exitCount, grid, 4);
+		createEntries(exitCount, grid, 6);
 		//System.out.println(exits);
 		
 		/*
@@ -153,10 +153,15 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		
 		int carCount = params.getInteger("car_count");
 		
+		int openInterval = params.getInteger("open_interval");
+		int closedInterval = params.getInteger("closed_interval");
+		TrafficLight trafficLight = new TrafficLight(openInterval, closedInterval);
+		context.add(trafficLight);
+		
 		for(int i = 0; i < carCount; i++) {
 			SimUtilities.shuffle(exitStarts, RandomHelper.createUniform());
 			GridPoint carSpawn = exitStarts.get(0).getStart();
-			Car car = new Car(space, grid, carSpawn);
+			Car car = new Car(space, grid, carSpawn, trafficLight);
 			context.add(car);
 			space.moveTo(car, carSpawn.getX(), carSpawn.getY());
 			grid.moveTo(car, carSpawn.getX(), carSpawn.getY());

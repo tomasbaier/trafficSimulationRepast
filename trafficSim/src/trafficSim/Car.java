@@ -28,31 +28,72 @@ public class Car {
 	private List<GridPoint> instructions;
 	private int direction;
 	private int crossroadDir;
+	private int crossroadDirSave;
+	private int pauseTimer;
 	private static final GridPoint[] directions = {new GridPoint(0, 1), new GridPoint(1, 0), new GridPoint(0, -1), new GridPoint(-1, 0)};
 	
 	//TESTING VARIABLES
 	private GridPoint previousPoint;
 	private GridPoint next;
+	private int stepCounter, crossroadInterval, pauseInterval;
+	private TrafficLight trafficLight;
 	
-	public Car(ContinuousSpace<Object> space, Grid<Object> grid, GridPoint startPos) {
+	private GridPoint test;
+	
+	public Car(ContinuousSpace<Object> space, Grid<Object> grid, GridPoint startPos, TrafficLight trafficLight) {
 		this.space = space;
 		this.grid = grid;
+		this.trafficLight = trafficLight;
+		test = new GridPoint(0, 0);
 		crossroadDir = 0;
+		pauseTimer = 0;
 		exit = null;
 		previousPoint = startingPoint;
 		instructions = new ArrayList<GridPoint>();
 		next = null;
 		direction = findInitialDirection(startPos);
 		//System.out.println(directions[direction]);
+		stepCounter = 0;
+		crossroadInterval = 3;
+		pauseInterval = 2;
+	}
+	
+	//@ScheduledMethod(start = 1, interval = 1)
+	public void drive() {
+		
+		GridPoint currentPos = grid.getLocation(this);
+		GridPoint nextPosition = new GridPoint(currentPos.getX() + directions[direction].getX(), currentPos.getY() + directions[direction].getY());
+		
+		if(isCar(nextPosition) || isCar(test)) {
+			return;
+		}
+		
+		if(!instructions.isEmpty()) {
+			if(!isCar(test)) moveByInstruction();
+			return;
+		}
+		
+		
+		
+		if(!isCrossroad(nextPosition, grid)) {
+			grid.moveTo(this, nextPosition.getX(), nextPosition.getY());
+			space.moveTo(this, nextPosition.getX(), nextPosition.getY());
+		} else {
+			if(trafficLight.getAllowedDir() == direction) {
+				crossroadInstructions(currentPos);
+				if(!isCar(test)) moveByInstruction();	
+			}
+			
+		}
+		
+		if(isExit(currentPos)) {
+			removeCar();
+		}
+		
 	}
 	
 	@ScheduledMethod(start = 1, interval = 1)
-	public void drive() {
-		
-		if(!instructions.isEmpty()) {
-			moveByInstruction();
-			return;
-		}
+	public void drive2() {
 		
 		GridPoint currentPos = grid.getLocation(this);
 		GridPoint nextPosition = new GridPoint(currentPos.getX() + directions[direction].getX(), currentPos.getY() + directions[direction].getY());
@@ -61,25 +102,39 @@ public class Car {
 			return;
 		}
 		
+		if(!instructions.isEmpty()) {
+			moveByInstruction();
+			return;
+		}
+		
+		
+		
 		if(!isCrossroad(nextPosition, grid)) {
 			grid.moveTo(this, nextPosition.getX(), nextPosition.getY());
 			space.moveTo(this, nextPosition.getX(), nextPosition.getY());
 		} else {
+			if(trafficLight.getAllowedDir() == direction) {
+				crossroadInstructions(currentPos);
+				moveByInstruction();	
+			}
 			
-			crossroadInstructions(currentPos);
-			
-			moveByInstruction();
-			//System.out.println(allowedDirections(currentPos));
 		}
+		
 		if(isExit(currentPos)) {
 			removeCar();
 		}
+		
 	}
-	
-	@ScheduledMethod(start = 1, interval = 15)
-	private void crossroadDir() {
-		crossroadDir = (crossroadDir + 1) % 4;
+
+	/*
+	@ScheduledMethod(start = 1, interval = 1)
+	public void crossroadDirO() {
+		stepCounter++;
+		crossroadDir = (stepCounter / (crossroadInterval + pauseInterval)) % 4;
+		if(stepCounter % (crossroadInterval + pauseInterval) < pauseInterval) crossroadDir = -1;
+		//System.out.println("counter: " + stepCounter + "openDir: " + crossroadDir );
 	}
+	*/
 	
 	private List<Integer> allowedDirections(GridPoint currentPos) {
 		List<Integer> result = new ArrayList<Integer>();
@@ -88,8 +143,8 @@ public class Car {
 		int dirLeft = Math.floorMod(direction - 1, 4);
 		GridPoint testRight = new GridPoint(currentPos.getX() + directions[direction].getX() + directions[dirRight].getX(), currentPos.getY() + directions[direction].getY() + directions[dirRight].getY());
 		GridPoint testStraight = new GridPoint(currentPos.getX() + directions[direction].getX() * 3, currentPos.getY() + directions[direction].getY() * 3);
-		GridPoint testLeft = new GridPoint(currentPos.getX() + directions[direction].getX() + directions[dirLeft].getX() * 2, currentPos.getY() + directions[direction].getY() + directions[dirLeft].getY() * 2);
-		System.out.println("Car position - " + grid.getLocation(this) + "testRight - " + testRight + " testStraight - " + testStraight + "testLeft" + testLeft);
+		GridPoint testLeft = new GridPoint(currentPos.getX() + directions[direction].getX() * 2 + directions[dirLeft].getX() * 2, currentPos.getY() + directions[direction].getY() * 2 + directions[dirLeft].getY() * 2);
+		//System.out.println("Car position - " + grid.getLocation(this) + "testRight - " + testRight + " testStraight - " + testStraight + "testLeft" + testLeft);
 		if(isRoad(testLeft)) result.add(dirLeft);
 		if(isRoad(testStraight)) result.add(dirStraight);
 		if(isRoad(testRight)) result.add(dirRight);
@@ -106,6 +161,7 @@ public class Car {
 			instructions.add(directions[direction]);
 			instructions.add(directions[newDirection]);
 			instructions.add(directions[newDirection]);
+			test = new GridPoint(currentPos.getX(), currentPos.getY());
 		} else if(newDirection == direction) {
 			//Straight
 			instructions.add(directions[newDirection]);
@@ -116,29 +172,23 @@ public class Car {
 			instructions.add(directions[direction]);
 			instructions.add(directions[newDirection]);
 		}
+		for (GridPoint direction : instructions) {
+			test = new GridPoint(test.getX() + direction.getX(), test.getY() + direction.getY());
+			
+		}
 		direction = newDirection;
 	}
 	
 	private void moveByInstruction() {
+		test = new GridPoint(0,0);
 		GridPoint dir = instructions.get(0);
 		
 		GridPoint currentPos = grid.getLocation(this);
 		GridPoint nextPosition = new GridPoint(currentPos.getX() + dir.getX(), currentPos.getY() + dir.getY());
-		
-		/*
-		if(dir.getY() == 1) {
-			direction = 0;
-		} else if(dir.getX() == 1) {
-			direction = 1;
-		} else if(dir.getY() == -1) {
-			direction = 2;
-		} else if(dir.getX() == -1) {
-			direction = 3;
-		}
-		*/
+
 		instructions.remove(0);
 		grid.moveTo(this, nextPosition.getX(), nextPosition.getY());
-		space.moveTo(this, nextPosition.getX(), nextPosition.getY());
+		space.moveTo(this, nextPosition.getX(), nextPosition.getY());		
 	}
 	
 	private boolean isCar(GridPoint nextPos) {
@@ -157,7 +207,7 @@ public class Car {
 		List<GridCell<Exit>> gridCells = nghCreator.getNeighborhood(true);
 		for (GridCell<Exit> gridCell : gridCells) {
 			if(gridCell.size() > 0) {
-				System.out.println("POINT -" + gridCell.getPoint() + " SIZE - " + gridCell.size());
+				//System.out.println("POINT -" + gridCell.getPoint() + " SIZE - " + gridCell.size());
 				return true;
 			}
 		}
@@ -171,7 +221,7 @@ public class Car {
 		for (GridCell<Road> gridCell : gridCells) {
 			//GridPoint currentPos = grid.getLocation(this);
 			if(gridCell.size() > 0) {
-				System.out.println("POINT -" + gridCell.getPoint() + " SIZE - " + gridCell.size());
+				//System.out.println("POINT -" + gridCell.getPoint() + " SIZE - " + gridCell.size());
 				result = true;
 				//System.out.println(gridCell.getPoint());
 			}
