@@ -25,7 +25,7 @@
 									
 		/>
 				<parameter name="grid_dimensions" displayName="Grid Dimensions" type="int" 
-						defaultValue="100" 
+						defaultValue="150" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									

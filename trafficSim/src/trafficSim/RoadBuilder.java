@@ -109,7 +109,7 @@ public class RoadBuilder implements ContextBuilder<Object> {
 		return context;
 	}
 	
-	//Tvorba entries mezi kterými se následnì tvoøí cesty(road)
+	//Tvorba entries mezi kterými se následnì bude tvoøit cesty(road)
 	private void createEntries(int amount, Grid<Object> grid, int distance) {
 		GridPoint pt1 = null;
 		GridPoint pt2 = null;

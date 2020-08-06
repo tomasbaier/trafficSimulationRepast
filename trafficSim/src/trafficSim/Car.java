@@ -34,6 +34,7 @@ public class Car {
 		//System.out.println(directions[direction]);
 	}
 	
+	//Metoda pohybu auta
 	@ScheduledMethod(start = 1, interval = 1)
 	public void drive() {
 		
